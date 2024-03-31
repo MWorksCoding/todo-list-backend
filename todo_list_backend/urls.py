@@ -23,4 +23,5 @@ urlpatterns = [
     path('', LoginView.as_view()),
     path('login/', LoginView.as_view()),
     path('todos/', TodoItemsView.as_view()),
+    path('todos/<int:pk>/', TodoItemsView.as_view()),
 ]

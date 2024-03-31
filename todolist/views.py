@@ -7,20 +7,16 @@ from .models import TodoItem
 from .serializers import TodoItemSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 
 class TodoItemsView(APIView):
     authentication_classes = [TokenAuthentication] # token must be send every time; activate / deactivate authorization
     permission_classes = [IsAuthenticated] # token must be send every time; activate / deactivate authorization
 
     def get(self, request, format=None):
-        print('request' , request)
-        print('request' , request.user)
         # todos = TodoItem.objects.all() # get all todos from all users!
         todos = TodoItem.objects.filter(author=request.user) # get only todos from user
-        print('todos' , todos)
         serializer = TodoItemSerializer(todos, many=True)
-        print('serializer' , serializer)
-        print('serializer' , serializer.data)
         return Response(serializer.data)
     
     def post(self, request, format=None):
@@ -33,39 +29,30 @@ class TodoItemsView(APIView):
         return Response(serializer.data)
     
     def put(self, request, pk, format=None):
+        print('pk:' , pk)
         try:
-            todo = TodoItem.objects.get(pk=pk)
+            todo = TodoItem.objects.get(pk=pk, author=request.user)
         except TodoItem.DoesNotExist:
             return Response({"error": "TodoItem does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Check if the user is authorized to update this todo item
         if todo.author != request.user:
             return Response({"error": "You are not authorized to update this todo item"}, status=status.HTTP_403_FORBIDDEN)
-
         title = request.data.get('title')
-
         if title is None:
             return Response({"error": "Title is missing"}, status=status.HTTP_400_BAD_REQUEST)
-
         todo.title = title
+        todo.checked = request.data.get('checked', todo.checked)
         todo.save()
-
         serializer = TodoItemSerializer(todo)
         return Response(serializer.data)
-    
     
     def delete(self, request, pk, format=None):
         try:
             todo = TodoItem.objects.get(pk=pk)
         except TodoItem.DoesNotExist:
             return Response({"error": "TodoItem does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Check if the user is authorized to delete this todo item
         if todo.author != request.user:
             return Response({"error": "You are not authorized to delete this todo item"}, status=status.HTTP_403_FORBIDDEN)
-
         todo.delete()
-
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
