@@ -72,3 +72,24 @@ class LoginView(ObtainAuthToken):
             'user_id': user.pk,
             'email': user.email
         })  
+        
+
+class LogoutView(APIView):
+    
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        token = Token.objects.get(user=request.user)
+        token.delete()
+        request.auth.delete()
+        return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+        # try:
+        #     token = request.auth
+        #     Token.objects.filter(key=token).delete()
+
+        #     return Response({"message": "logout successful"}, status=status.HTTP_200_OK)
+
+        # except Exception as e:
+
+        #     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
